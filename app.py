@@ -98,9 +98,9 @@ def configure_kernel(version, debug=False):
         config_option = input("Enter your choice (1/2/3): ")
         if config_option == '1':
             if debug:
-                print("Running 'make defconfig'")
-            os.system("make defconfig")
-            print("Kernel configured with default options")
+                print("Running 'zcat /proc/config.gz > .config'")
+            os.system("zcat /proc/config.gz > .config")
+            print("Kernel configured with current running kernel's configuration")
             break
         elif config_option == '2':
             if debug:
@@ -110,10 +110,10 @@ def configure_kernel(version, debug=False):
             break
         elif config_option == '3':
             if debug:
-                print("Running 'make defconfig' followed by 'make menuconfig'")
-            os.system("make defconfig")
+                print("Running 'zcat /proc/config.gz > .config' followed by 'make menuconfig'")
+            os.system("zcat /proc/config.gz > .config")
             os.system("make menuconfig")
-            print("Kernel configuration customized from default options")
+            print("Kernel configuration customized from current running kernel's configuration")
             break
         else:
             print("Invalid selection. Please enter 1, 2, or 3.")
