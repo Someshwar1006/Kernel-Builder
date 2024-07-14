@@ -80,6 +80,30 @@ def extract_kernel(version, debug=False):
     if debug:
         print(f"Kernel extracted to linux-{version}")
 
+def apply_patch(version, debug=False):
+    apply_patch = input("Do you have a patch file to apply? (yes/no): ").strip().lower()
+    if apply_patch == 'yes':
+        patch_in_current_dir = input("Is the patch file in the current directory? (yes/no): ").strip().lower()
+        if patch_in_current_dir == 'yes':
+            patch_files = [f for f in os.listdir('.') if f.endswith('.patch')]
+            if patch_files:
+                patch_file = patch_files[0]
+            else:
+                print("No .patch file found in the current directory.")
+                return
+        else:
+            patch_dir = input("Enter the directory containing the patch file: ").strip()
+            patch_files = [f for f in os.listdir(patch_dir) if f.endswith('.patch')]
+            if patch_files:
+                patch_file = os.path.join(patch_dir, patch_files[0])
+            else:
+                print(f"No .patch file found in the directory {patch_dir}.")
+                return
+        if debug:
+            print(f"Applying patch {patch_file}")
+        os.system(f"patch -p1 < {patch_file}")
+        print("Patch applied successfully.")
+
 def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
@@ -119,6 +143,9 @@ def configure_kernel(version, debug=False):
             print("Invalid selection. Please enter 1, 2, or 3.")
 
 def compile_kernel(version, debug=False):
+    if debug:
+        print("Running 'make bzImage'")
+    os.system("make bzImage")
     if debug:
         print("Running 'make -j$(nproc)'")
     os.system("make -j$(nproc)")
@@ -161,6 +188,7 @@ def main():
 
     download_kernel(selected_version, debug)
     extract_kernel(selected_version, debug)
+    apply_patch(selected_version, debug)
     configure_kernel(selected_version, debug)
     compile_kernel(selected_version, debug)
     install_kernel(selected_version, debug)
