@@ -4,30 +4,43 @@ import subprocess
 import argparse
 import tarfile
 
+# ANSI color escape sequences
+class colors:
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
+
 KERNEL_BASE_URL = "https://www.kernel.org"
 
 def get_available_versions(debug=False):
     url = f"{KERNEL_BASE_URL}/releases.json"
     if debug:
-        print(f"Fetching available versions from {url}")
+        print(f"{colors.DARKCYAN}Fetching available versions from {url}{colors.END}")
     response = requests.get(url)
     if response.status_code == 200:
         versions = response.json().get('releases')
         if debug:
-            print(f"Fetched {len(versions)} versions")
+            print(f"{colors.GREEN}Fetched {len(versions)} versions{colors.END}")
         return versions
     else:
-        print("Failed to fetch kernel versions. Check your internet connection.")
+        print(f"{colors.RED}Failed to fetch kernel versions. Check your internet connection.{colors.END}")
         return []
 
 def format_version_info(version_info):
     version = version_info.get('version', 'Unknown Version')
     released_date = version_info.get('released', {}).get('isodate', 'Unknown Date')
     source_url = version_info.get('source', 'Unknown Source')
-    return f"{version} - Released: {released_date}\n   Source: {source_url}"
+    return f"{colors.BOLD}{version}{colors.END} - Released: {released_date}\n   Source: {source_url}"
 
 def choose_kernel_version(versions, debug=False):
-    print("Available Linux Kernel Versions:")
+    print(f"{colors.PURPLE}Available Linux Kernel Versions:{colors.END}")
     for idx, version_info in enumerate(versions, start=1):
         formatted_info = format_version_info(version_info)
         print(f"{idx}. {formatted_info}")
@@ -38,17 +51,17 @@ def choose_kernel_version(versions, debug=False):
             index = int(selection) - 1
             if 0 <= index < len(versions):
                 if debug:
-                    print(f"Selected version: {versions[index].get('version')}")
+                    print(f"{colors.GREEN}Selected version: {versions[index].get('version')}{colors.END}")
                 return versions[index].get('version')
             else:
-                print("Invalid selection. Please enter a number from the list.")
+                print(f"{colors.RED}Invalid selection. Please enter a number from the list.{colors.END}")
         except ValueError:
-            print("Invalid input. Please enter a number.")
+            print(f"{colors.RED}Invalid input. Please enter a number.{colors.END}")
 
 def download_kernel(version, debug=False):
     url = f"{KERNEL_BASE_URL}/pub/linux/kernel/v{version.split('.')[0]}.x/linux-{version}.tar.xz"
     if debug:
-        print(f"Downloading kernel from {url}")
+        print(f"{colors.CYAN}Downloading kernel from {url}{colors.END}")
     response = requests.get(url, stream=True)
 
     if response.status_code == 200:
@@ -59,50 +72,50 @@ def download_kernel(version, debug=False):
                 if chunk:
                     file.write(chunk)
                     downloaded_size += len(chunk)
-                    print_progress_bar(downloaded_size, total_size, prefix="Downloading:", suffix="Complete", length=50)
+                    print_progress_bar(downloaded_size, total_size, prefix=f"{colors.BLUE}Downloading:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
         print(f"\nDownloaded linux-{version}.tar.xz")
         if debug:
-            print(f"Kernel downloaded to linux-{version}.tar.xz")
+            print(f"{colors.GREEN}Kernel downloaded to linux-{version}.tar.xz{colors.END}")
     else:
-        print("Failed to download kernel. Check the version and try again.")
+        print(f"{colors.RED}Failed to download kernel. Check the version and try again.{colors.END}")
 
 def extract_kernel(version, debug=False):
     if debug:
-        print(f"Extracting linux-{version}.tar.xz")
+        print(f"{colors.CYAN}Extracting linux-{version}.tar.xz{colors.END}")
     with tarfile.open(f"linux-{version}.tar.xz", 'r:xz') as tar:
         total_files = len(tar.getmembers())
         extracted_files = 0
         for member in tar.getmembers():
             tar.extract(member)
             extracted_files += 1
-            print_progress_bar(extracted_files, total_files, prefix="Extracting:", suffix="Complete", length=50)
+            print_progress_bar(extracted_files, total_files, prefix=f"{colors.BLUE}Extracting:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
     print(f"\nExtracted linux-{version}")
     if debug:
-        print(f"Kernel extracted to linux-{version}")
+        print(f"{colors.GREEN}Kernel extracted to linux-{version}{colors.END}")
 
 def apply_patch(version, debug=False):
-    apply_patch = input("Do you have a patch file to apply? (yes/no): ").strip().lower()
+    apply_patch = input(f"{colors.YELLOW}Do you have a patch file to apply? (yes/no): {colors.END}").strip().lower()
     if apply_patch == 'yes':
-        patch_in_current_dir = input("Is the patch file in the current directory? (yes/no): ").strip().lower()
+        patch_in_current_dir = input(f"{colors.YELLOW}Is the patch file in the current directory? (yes/no): {colors.END}").strip().lower()
         if patch_in_current_dir == 'yes':
             patch_files = [f for f in os.listdir('.') if f.endswith('.patch')]
             if patch_files:
                 patch_file = patch_files[0]
             else:
-                print("No .patch file found in the current directory.")
+                print(f"{colors.RED}No .patch file found in the current directory.{colors.END}")
                 return
         else:
-            patch_dir = input("Enter the directory containing the patch file: ").strip()
+            patch_dir = input(f"{colors.YELLOW}Enter the directory containing the patch file: {colors.END}").strip()
             patch_files = [f for f in os.listdir(patch_dir) if f.endswith('.patch')]
             if patch_files:
                 patch_file = os.path.join(patch_dir, patch_files[0])
             else:
-                print(f"No .patch file found in the directory {patch_dir}.")
+                print(f"{colors.RED}No .patch file found in the directory {patch_dir}.{colors.END}")
                 return
         if debug:
-            print(f"Applying patch {patch_file}")
+            print(f"{colors.CYAN}Applying patch {patch_file}{colors.END}")
         os.system(f"patch -p1 < {patch_file}")
-        print("Patch applied successfully.")
+        print(f"{colors.GREEN}Patch applied successfully.{colors.END}")
 
 def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
@@ -114,64 +127,64 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
 
 def configure_kernel(version, debug=False):
     os.chdir(f"linux-{version}")
-    print("Configuration options:")
-    print("1. Use default configuration")
-    print("2. Choose configuration from scratch")
-    print("3. Customize from default configuration")
+    print(f"{colors.PURPLE}Configuration options:{colors.END}")
+    print(f"{colors.BOLD}1.{colors.END} Use default configuration")
+    print(f"{colors.BOLD}2.{colors.END} Choose configuration from scratch")
+    print(f"{colors.BOLD}3.{colors.END} Customize from default configuration")
     while True:
-        config_option = input("Enter your choice (1/2/3): ")
+        config_option = input(f"{colors.YELLOW}Enter your choice (1/2/3): {colors.END}")
         if config_option == '1':
             if debug:
-                print("Running 'zcat /proc/config.gz > .config'")
+                print(f"{colors.CYAN}Running 'zcat /proc/config.gz > .config'{colors.END}")
             os.system("zcat /proc/config.gz > .config")
-            print("Kernel configured with current running kernel's configuration")
+            print(f"{colors.GREEN}Kernel configured with current running kernel's configuration{colors.END}")
             break
         elif config_option == '2':
             if debug:
-                print("Running 'make menuconfig'")
+                print(f"{colors.CYAN}Running 'make menuconfig'{colors.END}")
             os.system("make menuconfig")
-            print("Kernel configuration completed from scratch")
+            print(f"{colors.GREEN}Kernel configuration completed from scratch{colors.END}")
             break
         elif config_option == '3':
             if debug:
-                print("Running 'zcat /proc/config.gz > .config' followed by 'make menuconfig'")
+                print(f"{colors.CYAN}Running 'zcat /proc/config.gz > .config' followed by 'make menuconfig'{colors.END}")
             os.system("zcat /proc/config.gz > .config")
             os.system("make menuconfig")
-            print("Kernel configuration customized from current running kernel's configuration")
+            print(f"{colors.GREEN}Kernel configuration customized from current running kernel's configuration{colors.END}")
             break
         else:
-            print("Invalid selection. Please enter 1, 2, or 3.")
+            print(f"{colors.RED}Invalid selection. Please enter 1, 2, or 3.{colors.END}")
 
 def compile_kernel(version, debug=False):
     if debug:
-        print("Running 'make bzImage'")
+        print(f"{colors.CYAN}Running 'make bzImage'{colors.END}")
     os.system("make bzImage")
     if debug:
-        print("Running 'make -j$(nproc)'")
+        print(f"{colors.CYAN}Running 'make -j$(nproc)'{colors.END}")
     os.system("make -j$(nproc)")
-    print("Kernel compilation complete")
+    print(f"{colors.GREEN}Kernel compilation complete{colors.END}")
 
 def install_kernel(version, debug=False):
     if debug:
-        print("Running 'sudo make modules_install'")
+        print(f"{colors.CYAN}Running 'sudo make modules_install'{colors.END}")
     os.system("sudo make modules_install")
     os.system(f"sudo cp -v arch/x86/boot/bzImage /boot/vmlinuz-{version}")
     os.system(f"sudo cp -v System.map /boot/System.map-{version}")
     os.system(f"sudo cp -v .config /boot/config-{version}")
-    print("Kernel installed")
+    print(f"{colors.GREEN}Kernel installed{colors.END}")
 
 def create_initramfs(version, debug=False):
     initramfs_path = f"/boot/initramfs-{version}.img"
     if debug:
-        print(f"Creating initramfs at {initramfs_path}")
+        print(f"{colors.CYAN}Creating initramfs at {initramfs_path}{colors.END}")
     os.system(f"sudo mkinitcpio -k {version} -g {initramfs_path}")
-    print(f"Initramfs created at {initramfs_path}")
+    print(f"{colors.GREEN}Initramfs created at {initramfs_path}{colors.END}")
 
 def update_bootloader(version, debug=False):
     if debug:
-        print("Updating bootloader")
+        print(f"{colors.CYAN}Updating bootloader{colors.END}")
     os.system("sudo update-grub")
-    print("Bootloader updated")
+    print(f"{colors.GREEN}Bootloader updated{colors.END}")
 
 def main():
     parser = argparse.ArgumentParser(description="Linux Kernel Builder")
