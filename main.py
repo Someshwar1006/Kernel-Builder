@@ -1,7 +1,7 @@
 import argparse
 import arch
 import ubuntu
-
+#
 def main():
     parser = argparse.ArgumentParser(description="Linux Kernel Builder")
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug mode')

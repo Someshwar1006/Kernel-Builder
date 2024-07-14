@@ -10,19 +10,22 @@
 <body>
     <h1>Linux Kernel Builder</h1>
 
-    <p>Linux Kernel Builder is a Python tool that simplifies the process of downloading, configuring, compiling, and
-        installing the Linux kernel on different distributions, currently supporting Arch Linux and Ubuntu/Debian.</p>
+    <p>Linux Kernel Builder simplifies the process of compiling and installing the Linux kernel on various distributions,
+        including Arch Linux and Ubuntu/Debian.</p>
+
+    <h2>Description</h2>
+    <p>This tool automates kernel version selection, patch application, configuration, compilation, and installation,
+        optimizing the process for efficiency and customization.</p>
 
     <h2>Features</h2>
     <ul>
         <li><strong>Automatic Version Detection:</strong> Fetches available Linux kernel versions from kernel.org.</li>
         <li><strong>Interactive Selection:</strong> Allows users to select a kernel version to build.</li>
         <li><strong>Download and Extraction:</strong> Downloads and extracts the selected kernel version.</li>
-        <li><strong>Configuration Options:</strong> Offers various configuration methods: default, from scratch, or
-            customization.</li>
+        <li><strong>Configuration Options:</strong> Offers various methods: default, from scratch, or customization.</li>
         <li><strong>Patch Application:</strong> Supports applying patch files before compilation.</li>
-        <li><strong>Compilation and Installation:</strong> Compiles the kernel and installs it along with creating an
-            initramfs and updating the bootloader.</li>
+        <li><strong>Compilation and Installation:</strong> Compiles the kernel, installs it, creates an initramfs, and
+            updates the bootloader.</li>
     </ul>
 
     <h2>Supported Distributions</h2>

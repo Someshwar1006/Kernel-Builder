@@ -4,7 +4,7 @@ import subprocess
 import argparse
 import tarfile
 
-# ANSI color escape sequences
+# ANSI color escape sequences.
 class colors:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
