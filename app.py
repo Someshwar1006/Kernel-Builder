@@ -1,10 +1,8 @@
-# main.py
-
 import os
 import requests
 import subprocess
 import argparse
-from bs4 import BeautifulSoup
+import tarfile
 
 KERNEL_BASE_URL = "https://www.kernel.org"
 
@@ -54,11 +52,15 @@ def download_kernel(version, debug=False):
     response = requests.get(url, stream=True)
 
     if response.status_code == 200:
+        total_size = int(response.headers.get('content-length', 0))
+        downloaded_size = 0
         with open(f"linux-{version}.tar.xz", 'wb') as file:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     file.write(chunk)
-        print(f"Downloaded linux-{version}.tar.xz")
+                    downloaded_size += len(chunk)
+                    print_progress_bar(downloaded_size, total_size, prefix="Downloading:", suffix="Complete", length=50)
+        print(f"\nDownloaded linux-{version}.tar.xz")
         if debug:
             print(f"Kernel downloaded to linux-{version}.tar.xz")
     else:
@@ -67,10 +69,24 @@ def download_kernel(version, debug=False):
 def extract_kernel(version, debug=False):
     if debug:
         print(f"Extracting linux-{version}.tar.xz")
-    os.system(f"tar -xf linux-{version}.tar.xz")
-    print(f"Extracted linux-{version}")
+    with tarfile.open(f"linux-{version}.tar.xz", 'r:xz') as tar:
+        total_files = len(tar.getmembers())
+        extracted_files = 0
+        for member in tar.getmembers():
+            tar.extract(member)
+            extracted_files += 1
+            print_progress_bar(extracted_files, total_files, prefix="Extracting:", suffix="Complete", length=50)
+    print(f"\nExtracted linux-{version}")
     if debug:
         print(f"Kernel extracted to linux-{version}")
+
+def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filled_length = int(length * iteration // total)
+    bar = fill * filled_length + '-' * (length - filled_length)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end='\r')
+    if iteration == total:
+        print()
 
 def configure_kernel(version, debug=False):
     os.chdir(f"linux-{version}")
