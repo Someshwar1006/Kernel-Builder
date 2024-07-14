@@ -18,22 +18,28 @@ def get_available_versions():
         print("Failed to fetch kernel versions. Check your internet connection.")
         return []
 
+def format_version_info(version_info):
+    version = version_info.get('version', 'Unknown Version')
+    released_date = version_info.get('released', {}).get('isodate', 'Unknown Date')
+    source_url = version_info.get('source', 'Unknown Source')
+    return f"{version} - Released: {released_date}\n   Source: {source_url}"
+
 def choose_kernel_version(versions):
     print("Available Linux Kernel Versions:")
-    for idx, version in enumerate(versions, start=1):
-        print(f"{idx}. {version}")
+    for idx, version_info in enumerate(versions, start=1):
+        formatted_info = format_version_info(version_info)
+        print(f"{idx}. {formatted_info}")
 
-    selection = input("Enter the number of the kernel version to build: ")
-    try:
-        index = int(selection) - 1
-        if 0 <= index < len(versions):
-            return versions[index]
-        else:
-            print("Invalid selection. Please enter a number from the list.")
-            return choose_kernel_version(versions)
-    except ValueError:
-        print("Invalid input. Please enter a number.")
-        return choose_kernel_version(versions)
+    while True:
+        try:
+            selection = input("Enter the number of the kernel version to build: ")
+            index = int(selection) - 1
+            if 0 <= index < len(versions):
+                return versions[index].get('version')
+            else:
+                print("Invalid selection. Please enter a number from the list.")
+        except ValueError:
+            print("Invalid input. Please enter a number.")
 
 def download_kernel(version):
     url = f"{KERNEL_BASE_URL}/pub/linux/kernel/v{version.split('.')[0]}.x/linux-{version}.tar.xz"
