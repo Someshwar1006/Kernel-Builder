@@ -3,6 +3,7 @@ import os
 import requests
 import subprocess
 import sys
+import tarfile
 
 # ANSI color escape sequences.
 class colors:
