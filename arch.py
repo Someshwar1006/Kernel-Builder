@@ -168,6 +168,7 @@ def compile_kernel(version, debug=False):
     if debug:
         print(f"{colors.CYAN}Running 'make -j$(nproc)'{colors.END}")
     subprocess.run(["make", "-j20",])
+    subprocess.run(["make", "bzImage",])
     print(f"{colors.GREEN}Kernel compilation completed{colors.END}")
     os.chdir("..")
 
@@ -186,10 +187,20 @@ def install_kernel(version, debug=False):
 
 def create_initramfs(version, debug=False):
     print(f"{colors.CYAN}Creating initramfs{colors.END}")
+
+    # Copy the bzImage to /boot/vmlinuz-linux-{version}
+    print(f"{colors.CYAN}Copying bzImage to /boot/vmlinuz-linux-{version}{colors.END}")
     if debug:
-        print(f"{colors.CYAN}Running 'sudo mkinitcpio -k {version} -c /etc/mkinitcpio.conf -g /boot/initramfs-linux.img'{colors.END}")
-    subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", "/boot/initramfs-linux.img"])
+        print(f"{colors.CYAN}Running 'sudo cp -v arch/x86/boot/bzImage /boot/vmlinuz-linux-{version}'{colors.END}")
+    subprocess.run(["sudo", "cp", "-v", f"arch/x86/boot/bzImage", f"/boot/vmlinuz-linux-{version}"])
+    print(f"{colors.GREEN}bzImage copied to /boot/vmlinuz-linux-{version}{colors.END}")
+
+    # Create initramfs
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo mkinitcpio -k {version} -c /etc/mkinitcpio.conf -g /boot/initramfs-linux-{version}.img'{colors.END}")
+    subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", f"/boot/initramfs-linux-{version}.img"])
     print(f"{colors.GREEN}Initramfs creation completed{colors.END}")
+
 
 def update_bootloader(version, debug=False):
     bootloader = check_bootloader()
