@@ -171,6 +171,6 @@ def create_initramfs(version, debug=False):
 
 def update_bootloader(version, debug=False):
     print(f"{colors.CYAN}Updating bootloader{colors.END}")
-    os.system("sudo update-grub")
+    os.system("sudo sudo grub-mkconfig -o /boot/grub/grub.cfg")
     print(f"{colors.GREEN}Bootloader updated{colors.END}")
 
