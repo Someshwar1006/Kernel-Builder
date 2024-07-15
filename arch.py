@@ -126,11 +126,6 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
     if iteration == total:
         print()
 
-def install_required_packages():
-    print(f"{colors.CYAN}Installing required packages{colors.END}")
-    subprocess.run(["sudo", "pacman", "-Syu", "--needed", "base-devel", "linux-headers", "libnl", "grub"])
-    print(f"{colors.GREEN}Required packages installed{colors.END}")
-
 def configure_kernel(version, debug=False):
     os.chdir(f"linux-{version}")
     print(f"{colors.PURPLE}Configuration options:{colors.END}")
@@ -251,15 +246,8 @@ def disable_secureboot_keyrings():
     else:
         print(f"{colors.YELLOW}Secure Boot keyrings will not be modified.{colors.END}")
 
-def install_required_packages():
-    print(f"{colors.CYAN}Installing required packages{colors.END}")
-    subprocess.run(["sudo", "pacman", "-Syu", "--needed", "base-devel", "linux-headers", "libnl", "grub"])
-    print(f"{colors.GREEN}Required packages installed{colors.END}")
-
 if __name__ == "__main__":
     debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
-
-    install_required_packages()
 
     versions = get_available_versions(debug)
     if not versions:
@@ -270,8 +258,8 @@ if __name__ == "__main__":
     download_kernel(version, debug)
     extract_kernel(version, debug)
     apply_patch(version, debug)
-    disable_secureboot_keyrings()
     configure_kernel(version, debug)
+    disable_secureboot_keyrings()
     compile_kernel(version, debug)
     install_kernel(version, debug)
     create_initramfs(version, debug)
