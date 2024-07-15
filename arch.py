@@ -170,7 +170,14 @@ def create_initramfs(version, debug=False):
     subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", "/boot/initramfs-linux.img"])
 
 def update_bootloader(version, debug=False):
-    print(f"{colors.CYAN}Updating bootloader{colors.END}")
-    os.system("sudo sudo grub-mkconfig -o /boot/grub/grub.cfg")
-    print(f"{colors.GREEN}Bootloader updated{colors.END}")
-
+    bootloader = check_bootloader()
+    if bootloader == 'grub':
+        print(f"{colors.CYAN}Updating GRUB bootloader{colors.END}")
+        os.system("sudo grub-mkconfig -o /boot/grub/grub.cfg")
+        print(f"{colors.GREEN}GRUB bootloader updated{colors.END}")
+    elif bootloader == 'systemd-boot':
+        print(f"{colors.CYAN}Updating systemd-boot bootloader{colors.END}")
+        os.system("sudo bootctl update")
+        print(f"{colors.GREEN}systemd-boot bootloader updated{colors.END}")
+    else:
+        print(f"{colors.RED}No recognized bootloader detected or supported.{colors
