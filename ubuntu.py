@@ -4,7 +4,7 @@ import requests
 import subprocess
 import tarfile
 
-# ANSI color escape sequences for colored output
+# ANSI color escape sequences.
 class colors:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
@@ -20,7 +20,6 @@ class colors:
 KERNEL_BASE_URL = "https://www.kernel.org"
 
 def get_available_versions(debug=False):
-    # Fetches available Linux kernel versions from kernel.org
     url = f"{KERNEL_BASE_URL}/releases.json"
     if debug:
         print(f"{colors.DARKCYAN}Fetching available versions from {url}{colors.END}")
@@ -35,14 +34,12 @@ def get_available_versions(debug=False):
         return []
 
 def format_version_info(version_info):
-    # Formats version information for display
     version = version_info.get('version', 'Unknown Version')
     released_date = version_info.get('released', {}).get('isodate', 'Unknown Date')
     source_url = version_info.get('source', 'Unknown Source')
     return f"{colors.BOLD}{version}{colors.END} - Released: {released_date}\n   Source: {source_url}"
 
 def choose_kernel_version(versions, debug=False):
-    # Allows user to choose a kernel version from fetched list
     print(f"{colors.PURPLE}Available Linux Kernel Versions:{colors.END}")
     for idx, version_info in enumerate(versions, start=1):
         formatted_info = format_version_info(version_info)
@@ -62,7 +59,6 @@ def choose_kernel_version(versions, debug=False):
             print(f"{colors.RED}Invalid input. Please enter a number.{colors.END}")
 
 def download_kernel(version, debug=False):
-    # Downloads the specified Linux kernel version from kernel.org
     url = f"{KERNEL_BASE_URL}/pub/linux/kernel/v{version.split('.')[0]}.x/linux-{version}.tar.xz"
     if debug:
         print(f"{colors.CYAN}Downloading kernel from {url}{colors.END}")
@@ -84,7 +80,6 @@ def download_kernel(version, debug=False):
         print(f"{colors.RED}Failed to download kernel. Check the version and try again.{colors.END}")
 
 def extract_kernel(version, debug=False):
-    # Extracts the downloaded kernel tarball
     if debug:
         print(f"{colors.CYAN}Extracting linux-{version}.tar.xz{colors.END}")
     with tarfile.open(f"linux-{version}.tar.xz", 'r:xz') as tar:
@@ -99,7 +94,6 @@ def extract_kernel(version, debug=False):
         print(f"{colors.GREEN}Kernel extracted to linux-{version}{colors.END}")
 
 def apply_patch(version, debug=False):
-    # Applies a patch file to the kernel source if provided by the user
     apply_patch = input(f"{colors.YELLOW}Do you have a patch file to apply? (yes/no): {colors.END}").strip().lower()
     if apply_patch == 'yes':
         patch_in_current_dir = input(f"{colors.YELLOW}Is the patch file in the current directory? (yes/no): {colors.END}").strip().lower()
@@ -124,7 +118,6 @@ def apply_patch(version, debug=False):
         print(f"{colors.GREEN}Patch applied successfully.{colors.END}")
 
 def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
-    # Prints a progress bar for download and extraction
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filled_length = int(length * iteration // total)
     bar = fill * filled_length + '-' * (length - filled_length)
@@ -133,7 +126,6 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
         print()
 
 def configure_kernel(version, debug=False):
-    # Configures the kernel before compilation
     os.chdir(f"linux-{version}")
     print(f"{colors.PURPLE}Configuration options:{colors.END}")
     print(f"{colors.BOLD}1.{colors.END} Use default configuration")
@@ -176,7 +168,6 @@ def configure_kernel(version, debug=False):
     os.chdir("..")
 
 def compile_kernel(version, debug=False):
-    # Compiles the kernel after configuration
     os.chdir(f"linux-{version}")
     print(f"{colors.CYAN}Compiling kernel{colors.END}")
     subprocess.run(["make", "-j20"])
@@ -184,7 +175,6 @@ def compile_kernel(version, debug=False):
     os.chdir("..")
 
 def install_kernel(version, debug=False):
-    # Installs the compiled kernel and its modules
     os.chdir(f"linux-{version}")
     print(f"{colors.CYAN}Installing kernel{colors.END}")
     subprocess.run(["sudo", "make", "modules_install"])
@@ -193,23 +183,12 @@ def install_kernel(version, debug=False):
     os.chdir("..")
 
 def update_bootloader(version, debug=False):
-    # Updates the bootloader configuration (e.g., GRUB)
     print(f"{colors.CYAN}Updating bootloader{colors.END}")
     os.system("sudo update-grub")
     print(f"{colors.GREEN}Bootloader updated{colors.END}")
 
-def install_required_packages():
-    # Installs required packages for kernel compilation
-    print(f"{colors.CYAN}Installing required packages{colors.END}")
-    subprocess.run(["sudo", "apt", "update"])
-    subprocess.run(["sudo", "apt", "install", "-y", "--no-install-recommends", "build-essential", "libncurses-dev", "bison", "flex", "libssl-dev", "libelf-dev", "fakeroot", "dwarves"])
-    print(f"{colors.GREEN}Required packages installed{colors.END}")
-
 if __name__ == "__main__":
     debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
-
-    # Install required packages
-    install_required_packages()
 
     versions = get_available_versions(debug)
     if not versions:
