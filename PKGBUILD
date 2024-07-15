@@ -8,7 +8,7 @@ url="https://github.com/Someshwar1006/Kernel-Builder"
 license=('MIT')
 depends=('python')
 source=("$pkgname-$pkgver.tar.gz::$url/raw/main/kernel-builder-1.0.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('956daf2981c8cd57e857ea9400724e13e62ed9bd97032a7beb64ca132eccb5f3')
 
 package() {
   cd "$srcdir/"
