@@ -2,7 +2,6 @@
 import os
 import requests
 import subprocess
-import tarfile
 import sys
 
 # ANSI color escape sequences.
@@ -224,6 +223,17 @@ def check_bootloader(debug=False):
         print(f"{colors.RED}No recognized bootloader detected{colors.END}")
     return None
 
+def disable_secureboot_keyrings():
+    disable_keyrings = input(f"{colors.YELLOW}Do you want to disable Secure Boot keyrings? (yes/no): {colors.END}").strip().lower()
+    if disable_keyrings == 'yes':
+        os.system("sudo scripts/config --disable SYSTEM_TRUSTED_KEYS")
+        os.system("sudo scripts/config --disable SYSTEM_REVOCATION_KEYS")
+        os.system("sudo scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ''")
+        os.system("sudo scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ''")
+        print(f"{colors.GREEN}Secure Boot keyrings disabled successfully.{colors.END}")
+    else:
+        print(f"{colors.YELLOW}Secure Boot keyrings will not be modified.{colors.END}")
+
 if __name__ == "__main__":
     debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
 
@@ -237,6 +247,7 @@ if __name__ == "__main__":
     extract_kernel(version, debug)
     apply_patch(version, debug)
     configure_kernel(version, debug)
+    disable_secureboot_keyrings()
     compile_kernel(version, debug)
     install_kernel(version, debug)
     create_initramfs(version, debug)
