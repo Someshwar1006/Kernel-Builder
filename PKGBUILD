@@ -14,7 +14,6 @@ package() {
   cd "$srcdir/"
 
   # Ensure python-pip is installed
-  pacman -S --noconfirm python-pip
 
   # Use pip to install requests to the package directory
   pip install --target="$pkgdir/usr/lib/$pkgname" requests
