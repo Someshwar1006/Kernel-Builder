@@ -166,7 +166,7 @@ def compile_kernel(version, debug=False):
     print(f"{colors.CYAN}Compiling kernel{colors.END}")
     if debug:
         print(f"{colors.CYAN}Running 'make -j$(nproc)'{colors.END}")
-    subprocess.run(["make", "-j8", "-d"])
+    subprocess.run(["make", "-j20",])
     print(f"{colors.GREEN}Kernel compilation completed{colors.END}")
     os.chdir("..")
 
