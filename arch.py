@@ -181,16 +181,22 @@ def install_kernel(version, debug=False):
     os.chdir("..")
 
 def create_initramfs(version, debug=False):
-    print(f"{colors.CYAN}Creating initramfs{colors.END}")
+    bzImage_path = f"linux-{version}/arch/x86/boot/bzImage"
+    target_path = f"/boot/vmlinuz-linux-{version}"
 
-    # Copy the bzImage to /boot/vmlinuz-linux-{version}
-    print(f"{colors.CYAN}Copying bzImage to /boot/vmlinuz-linux-{version}{colors.END}")
-    if debug:
-        print(f"{colors.CYAN}Running 'sudo cp -v arch/x86/boot/bzImage /boot/vmlinuz-linux-{version}'{colors.END}")
-    subprocess.run(["sudo", "cp", "-v", f"arch/x86/boot/bzImage", f"/boot/vmlinuz-linux-{version}"])
-    print(f"{colors.GREEN}bzImage copied to /boot/vmlinuz-linux-{version}{colors.END}")
+    # Ensure bzImage exists
+    if os.path.exists(bzImage_path):
+        print(f"{colors.CYAN}Copying bzImage to /boot/vmlinuz-linux-{version}{colors.END}")
+        if debug:
+            print(f"{colors.CYAN}Running 'sudo cp -v {bzImage_path} {target_path}'{colors.END}")
+        subprocess.run(["sudo", "cp", "-v", bzImage_path, target_path])
+        print(f"{colors.GREEN}bzImage copied to {target_path}{colors.END}")
+    else:
+        print(f"{colors.RED}Error: bzImage not found at {bzImage_path}{colors.END}")
+        return
 
     # Create initramfs
+    print(f"{colors.CYAN}Creating initramfs{colors.END}")
     if debug:
         print(f"{colors.CYAN}Running 'sudo mkinitcpio -k {version} -c /etc/mkinitcpio.conf -g /boot/initramfs-linux-{version}.img'{colors.END}")
     subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", f"/boot/initramfs-linux-{version}.img"])
