@@ -13,7 +13,7 @@ sha256sums=('SKIP')
 package() {
   cd "$srcdir/"
 
-  # Ensure python-pip is installed
+  # Ensure python-pip is installedy7
 
   # Use pip to install requests to the package directory
   pip install --target="$pkgdir/usr/lib/$pkgname" requests
