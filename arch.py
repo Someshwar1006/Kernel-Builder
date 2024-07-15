@@ -158,17 +158,33 @@ def configure_kernel(version, debug=False):
     os.chdir("..")
 
 def compile_kernel(version, debug=False):
+    os.chdir(f"linux-{version}")
     print(f"{colors.CYAN}Compiling kernel{colors.END}")
-    subprocess.run(["make", "bzImage"])
+    if debug:
+        print(f"{colors.CYAN}Running 'make -j$(nproc)'{colors.END}")
+    subprocess.run(["make", "-j$(nproc)"])
+    print(f"{colors.GREEN}Kernel compilation completed{colors.END}")
+    os.chdir("..")
 
 def install_kernel(version, debug=False):
-    print(f"{colors.CYAN}Installing kernel{colors.END}")
+    os.chdir(f"linux-{version}")
+    print(f"{colors.CYAN}Installing kernel modules{colors.END}")
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo make modules_install'{colors.END}")
     subprocess.run(["sudo", "make", "modules_install"])
+    print(f"{colors.CYAN}Installing kernel{colors.END}")
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo make install'{colors.END}")
     subprocess.run(["sudo", "make", "install"])
+    print(f"{colors.GREEN}Kernel installation completed{colors.END}")
+    os.chdir("..")
 
 def create_initramfs(version, debug=False):
     print(f"{colors.CYAN}Creating initramfs{colors.END}")
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo mkinitcpio -k {version} -c /etc/mkinitcpio.conf -g /boot/initramfs-linux.img'{colors.END}")
     subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", "/boot/initramfs-linux.img"])
+    print(f"{colors.GREEN}Initramfs creation completed{colors.END}")
 
 def update_bootloader(version, debug=False):
     bootloader = check_bootloader()

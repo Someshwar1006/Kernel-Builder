@@ -158,7 +158,7 @@ def configure_kernel(version, debug=False):
 
 def compile_kernel(version, debug=False):
     print(f"{colors.CYAN}Compiling kernel{colors.END}")
-    subprocess.run(["make", "bzImage"])
+    subprocess.run(["make", "-j20"])
 
 def install_kernel(version, debug=False):
     print(f"{colors.CYAN}Installing kernel{colors.END}")
