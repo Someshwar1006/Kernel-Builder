@@ -175,18 +175,26 @@ def install_kernel(version, debug=False):
     subprocess.run(["sudo", "make", "modules_install"])
     print(f"{colors.CYAN}Installing kernel{colors.END}")
     if debug:
+         print(f"{colors.CYAN}Running 'sudo make modules'{colors.END}")
+         subprocess.run(["sudo", "make", "modules"])
+    if debug:
         print(f"{colors.CYAN}Running 'sudo make install'{colors.END}")
     subprocess.run(["sudo", "make", "install"])
     print(f"{colors.GREEN}Kernel installation completed{colors.END}")
     os.chdir("..")
 
 def create_initramfs(version, debug=False):
+    # Ensure version is formatted as x.y.z (e.g., 6.10.0)
+    version_parts = version.split('.')
+    if len(version_parts) == 2:
+        version = f"{version}.0"
+
     bzImage_path = f"linux-{version}/arch/x86/boot/bzImage"
     target_path = f"/boot/vmlinuz-linux-{version}"
 
     # Ensure bzImage exists
     if os.path.exists(bzImage_path):
-        print(f"{colors.CYAN}Copying bzImage to /boot/vmlinuz-linux-{version}{colors.END}")
+        print(f"{colors.CYAN}Copying bzImage to {target_path}{colors.END}")
         if debug:
             print(f"{colors.CYAN}Running 'sudo cp -v {bzImage_path} {target_path}'{colors.END}")
         subprocess.run(["sudo", "cp", "-v", bzImage_path, target_path])
