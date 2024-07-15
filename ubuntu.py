@@ -165,9 +165,9 @@ def install_kernel(version, debug=False):
     subprocess.run(["sudo", "make", "modules_install"])
     subprocess.run(["sudo", "make", "install"])
 
-def create_initramfs(version, debug=False):
-    print(f"{colors.CYAN}Creating initramfs{colors.END}")
-    subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", "/boot/initramfs-linux.img"])
+#def create_initramfs(version, debug=False):
+    #print(f"{colors.CYAN}Creating initramfs{colors.END}")
+    #subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", "/boot/initramfs-linux.img"]) # Make install does all this
 
 def update_bootloader(version, debug=False):
     print(f"{colors.CYAN}Updating bootloader{colors.END}")
