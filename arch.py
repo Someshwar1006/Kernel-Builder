@@ -3,6 +3,7 @@ import os
 import requests
 import subprocess
 import tarfile
+import sys
 
 # ANSI color escape sequences.
 class colors:
@@ -180,4 +181,48 @@ def update_bootloader(version, debug=False):
         os.system("sudo bootctl update")
         print(f"{colors.GREEN}systemd-boot bootloader updated{colors.END}")
     else:
-        print(f"{colors.RED}No recognized bootloader detected or supported.{colors
+        print(f"{colors.RED}No recognized bootloader detected or supported.{colors.END}")
+
+def check_bootloader(debug=False):
+    if debug:
+        print(f"{colors.CYAN}Checking for bootloader{colors.END}")
+    try:
+        bootctl_output = subprocess.run(['bootctl', 'status'], capture_output=True, text=True)
+        if 'Systemd' in bootctl_output.stdout:
+            if debug:
+                print(f"{colors.GREEN}Systemd bootloader detected{colors.END}")
+            return 'systemd-boot'
+    except FileNotFoundError:
+        pass
+
+    try:
+        grub_output = subprocess.run(['grub-install', '--version'], capture_output=True, text=True)
+        if 'GRUB' in grub_output.stdout:
+            if debug:
+                print(f"{colors.GREEN}GRUB bootloader detected{colors.END}")
+            return 'grub'
+    except FileNotFoundError:
+        pass
+
+    if debug:
+        print(f"{colors.RED}No recognized bootloader detected{colors.END}")
+    return None
+
+if __name__ == "__main__":
+    debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
+
+    versions = get_available_versions(debug)
+    if not versions:
+        print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
+        sys.exit(1)
+
+    version = choose_kernel_version(versions, debug)
+    download_kernel(version, debug)
+    extract_kernel(version, debug)
+    apply_patch(version, debug)
+    configure_kernel(version, debug)
+    compile_kernel(version, debug)
+    install_kernel(version, debug)
+    create_initramfs(version, debug)
+    update_bootloader(version, debug)
+    check_bootloader(debug)
