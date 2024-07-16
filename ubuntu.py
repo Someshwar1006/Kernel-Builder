@@ -141,9 +141,9 @@ def configure_kernel(version, debug=False):
             break
         elif config_option == '2':
             if debug:
-                print(f"{colors.CYAN}Running 'make menuconfig'{colors.END}")
-            os.system("make menuconfig")
-            print(f"{colors.GREEN}Kernel configuration completed from scratch{colors.END}")
+                print(f"{colors.CYAN}Running 'make localmodconfig'{colors.END}")
+            os.system("make localmodconfig")
+            print(f"{colors.GREEN}Kernel configuration initialized with local modules{colors.END}")
             break
         elif config_option == '3':
             if debug:
@@ -154,22 +154,52 @@ def configure_kernel(version, debug=False):
             break
         else:
             print(f"{colors.RED}Invalid selection. Please enter 1, 2, or 3.{colors.END}")
+
+    # Optionally disable secure boot keyrings
+    disable_secureboot = input(f"{colors.YELLOW}Do you want to disable secure boot keyrings? (yes/no): {colors.END}").strip().lower()
+    if disable_secureboot == 'yes':
+        print(f"{colors.CYAN}Disabling secure boot keyrings{colors.END}")
+        subprocess.run(["sudo", "scripts/config", "--disable", "SYSTEM_TRUSTED_KEYS"])
+        subprocess.run(["sudo", "scripts/config", "--disable", "SYSTEM_REVOCATION_KEYS"])
+        subprocess.run(["sudo", "scripts/config", "--set-str", "CONFIG_SYSTEM_TRUSTED_KEYS", '""'])
+        subprocess.run(["sudo", "scripts/config", "--set-str", "CONFIG_SYSTEM_REVOCATION_KEYS", '""'])
+        print(f"{colors.GREEN}Secure boot keyrings disabled{colors.END}")
+
     os.chdir("..")
 
 def compile_kernel(version, debug=False):
+    os.chdir(f"linux-{version}")
     print(f"{colors.CYAN}Compiling kernel{colors.END}")
-    subprocess.run(["make", "bzImage"])
+    subprocess.run(["make", "-j20"])
+    print(f"{colors.GREEN}Kernel compilation completed{colors.END}")
+    os.chdir("..")
 
 def install_kernel(version, debug=False):
+    os.chdir(f"linux-{version}")
     print(f"{colors.CYAN}Installing kernel{colors.END}")
     subprocess.run(["sudo", "make", "modules_install"])
     subprocess.run(["sudo", "make", "install"])
-
-#def create_initramfs(version, debug=False):
-    #print(f"{colors.CYAN}Creating initramfs{colors.END}")
-    #subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", "/boot/initramfs-linux.img"]) # Make install does all this
+    print(f"{colors.GREEN}Kernel installation completed{colors.END}")
+    os.chdir("..")
 
 def update_bootloader(version, debug=False):
     print(f"{colors.CYAN}Updating bootloader{colors.END}")
     os.system("sudo update-grub")
     print(f"{colors.GREEN}Bootloader updated{colors.END}")
+
+if __name__ == "__main__":
+    debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
+
+    versions = get_available_versions(debug)
+    if not versions:
+        print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
+        sys.exit(1)
+
+    version = choose_kernel_version(versions, debug)
+    download_kernel(version, debug)
+    extract_kernel(version, debug)
+    apply_patch(version, debug)
+    configure_kernel(version, debug)
+    compile_kernel(version, debug)
+    install_kernel(version, debug)
+    update_bootloader(version, debug)

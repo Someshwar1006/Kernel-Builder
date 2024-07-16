@@ -2,6 +2,7 @@
 import os
 import requests
 import subprocess
+import sys
 import tarfile
 
 # ANSI color escape sequences.
@@ -157,20 +158,124 @@ def configure_kernel(version, debug=False):
     os.chdir("..")
 
 def compile_kernel(version, debug=False):
+    os.chdir(f"linux-{version}")
     print(f"{colors.CYAN}Compiling kernel{colors.END}")
-    subprocess.run(["make", "bzImage"])
+    if debug:
+        print(f"{colors.CYAN}Running 'make -j$(nproc)'{colors.END}")
+    subprocess.run(["make", "-j20",])
+    subprocess.run(["make", "bzImage",])
+    print(f"{colors.GREEN}Kernel compilation completed{colors.END}")
+    os.chdir("..")
 
 def install_kernel(version, debug=False):
-    print(f"{colors.CYAN}Installing kernel{colors.END}")
+    os.chdir(f"linux-{version}")
+    print(f"{colors.CYAN}Installing kernel modules{colors.END}")
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo make modules_install'{colors.END}")
     subprocess.run(["sudo", "make", "modules_install"])
+    print(f"{colors.CYAN}Installing kernel{colors.END}")
+    if debug:
+         print(f"{colors.CYAN}Running 'sudo make modules'{colors.END}")
+         subprocess.run(["sudo", "make", "modules"])
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo make install'{colors.END}")
     subprocess.run(["sudo", "make", "install"])
+    print(f"{colors.GREEN}Kernel installation completed{colors.END}")
+    os.chdir("..")
 
 def create_initramfs(version, debug=False):
+    # Ensure version is formatted as x.y.z (e.g., 6.10.0)
+    version_parts = version.split('.')
+    if len(version_parts) == 2:
+        version = f"{version}.0"
+
+    bzImage_path = f"linux-{version}/arch/x86/boot/bzImage"
+    target_path = f"/boot/vmlinuz-linux-{version}"
+
+    # Ensure bzImage exists
+    if os.path.exists(bzImage_path):
+        print(f"{colors.CYAN}Copying bzImage to {target_path}{colors.END}")
+        if debug:
+            print(f"{colors.CYAN}Running 'sudo cp -v {bzImage_path} {target_path}'{colors.END}")
+        subprocess.run(["sudo", "cp", "-v", bzImage_path, target_path])
+        print(f"{colors.GREEN}bzImage copied to {target_path}{colors.END}")
+    else:
+        print(f"{colors.RED}Error: bzImage not found at {bzImage_path}{colors.END}")
+        return
+
+    # Create initramfs
     print(f"{colors.CYAN}Creating initramfs{colors.END}")
-    subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", "/boot/initramfs-linux.img"])
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo mkinitcpio -k {version} -c /etc/mkinitcpio.conf -g /boot/initramfs-linux-{version}.img'{colors.END}")
+    subprocess.run(["sudo", "mkinitcpio", "-k", version, "-c", "/etc/mkinitcpio.conf", "-g", f"/boot/initramfs-linux-{version}.img"])
+    print(f"{colors.GREEN}Initramfs creation completed{colors.END}")
+
 
 def update_bootloader(version, debug=False):
-    print(f"{colors.CYAN}Updating bootloader{colors.END}")
-    os.system("sudo sudo grub-mkconfig -o /boot/grub/grub.cfg")
-    print(f"{colors.GREEN}Bootloader updated{colors.END}")
+    bootloader = check_bootloader()
+    if bootloader == 'grub':
+        print(f"{colors.CYAN}Updating GRUB bootloader{colors.END}")
+        os.system("sudo grub-mkconfig -o /boot/grub/grub.cfg")
+        print(f"{colors.GREEN}GRUB bootloader updated{colors.END}")
+    elif bootloader == 'systemd-boot':
+        print(f"{colors.CYAN}Updating systemd-boot bootloader{colors.END}")
+        os.system("sudo bootctl update")
+        print(f"{colors.GREEN}systemd-boot bootloader updated{colors.END}")
+    else:
+        print(f"{colors.RED}No recognized bootloader detected or supported.{colors.END}")
 
+def check_bootloader(debug=False):
+    if debug:
+        print(f"{colors.CYAN}Checking for bootloader{colors.END}")
+    try:
+        bootctl_output = subprocess.run(['bootctl', 'status'], capture_output=True, text=True)
+        if 'Systemd' in bootctl_output.stdout:
+            if debug:
+                print(f"{colors.GREEN}Systemd bootloader detected{colors.END}")
+            return 'systemd-boot'
+    except FileNotFoundError:
+        pass
+
+    try:
+        grub_output = subprocess.run(['grub-install', '--version'], capture_output=True, text=True)
+        if 'GRUB' in grub_output.stdout:
+            if debug:
+                print(f"{colors.GREEN}GRUB bootloader detected{colors.END}")
+            return 'grub'
+    except FileNotFoundError:
+        pass
+
+    if debug:
+        print(f"{colors.RED}No recognized bootloader detected{colors.END}")
+    return None
+
+def disable_secureboot_keyrings():
+    disable_keyrings = input(f"{colors.YELLOW}Do you want to disable Secure Boot keyrings? (yes/no): {colors.END}").strip().lower()
+    if disable_keyrings == 'yes':
+        os.system("sudo scripts/config --disable SYSTEM_TRUSTED_KEYS")
+        os.system("sudo scripts/config --disable SYSTEM_REVOCATION_KEYS")
+        os.system("sudo scripts/config --set-str CONFIG_SYSTEM_TRUSTED_KEYS ''")
+        os.system("sudo scripts/config --set-str CONFIG_SYSTEM_REVOCATION_KEYS ''")
+        print(f"{colors.GREEN}Secure Boot keyrings disabled successfully.{colors.END}")
+    else:
+        print(f"{colors.YELLOW}Secure Boot keyrings will not be modified.{colors.END}")
+
+if __name__ == "__main__":
+    debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
+
+    versions = get_available_versions(debug)
+    if not versions:
+        print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
+        sys.exit(1)
+
+    version = choose_kernel_version(versions, debug)
+    download_kernel(version, debug)
+    extract_kernel(version, debug)
+    apply_patch(version, debug)
+    configure_kernel(version, debug)
+    disable_secureboot_keyrings()
+    compile_kernel(version, debug)
+    install_kernel(version, debug)
+    create_initramfs(version, debug)
+    update_bootloader(version, debug)
+    check_bootloader(debug)
