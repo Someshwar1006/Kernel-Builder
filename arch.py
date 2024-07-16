@@ -126,6 +126,14 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
     if iteration == total:
         print()
 
+def install_packages(packages, debug=False):
+    package_list = ' '.join(packages)
+    print(f"{colors.CYAN}Installing necessary packages: {package_list}{colors.END}")
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo pacman -Syu --needed {package_list}'{colors.END}")
+    subprocess.run(["sudo", "pacman", "-Syu", "--needed", *packages])
+    print(f"{colors.GREEN}Package installation completed{colors.END}")
+
 def configure_kernel(version, debug=False):
     os.chdir(f"linux-{version}")
     print(f"{colors.PURPLE}Configuration options:{colors.END}")
@@ -182,13 +190,6 @@ def install_kernel(version, debug=False):
     subprocess.run(["sudo", "make", "install"])
     print(f"{colors.GREEN}Kernel installation completed{colors.END}")
     os.chdir("..")
-
-def create_initramfs(version, debug=False):
-    # Ensure version is formatted as x.y.z (e.g., 6.10.0)
-    version_parts = version.split('.')
-    if len(version_parts) == 2:
-        version = f"{version}.0"
-
     bzImage_path = f"linux-{version}/arch/x86/boot/bzImage"
     target_path = f"/boot/vmlinuz-linux-{version}"
 
@@ -202,6 +203,12 @@ def create_initramfs(version, debug=False):
     else:
         print(f"{colors.RED}Error: bzImage not found at {bzImage_path}{colors.END}")
         return
+
+def create_initramfs(version, debug=False):
+    # Ensure version is formatted as x.y.z (e.g., 6.10.0)
+    version_parts = version.split('.')
+    if len(version_parts) == 2:
+        version = f"{version}.0"
 
     # Create initramfs
     print(f"{colors.CYAN}Creating initramfs{colors.END}")
@@ -259,6 +266,19 @@ def disable_secureboot_keyrings():
         print(f"{colors.GREEN}Secure Boot keyrings disabled successfully.{colors.END}")
     else:
         print(f"{colors.YELLOW}Secure Boot keyrings will not be modified.{colors.END}")
+packages = [
+    "base-devel",
+    "xmlto",
+    "kmod",
+    "inetutils",
+    "bc",
+    "libelf",
+    "git",
+    "cpio",
+    "perl",
+    "tar",
+    "xz"
+]
 
 if __name__ == "__main__":
     debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
