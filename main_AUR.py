@@ -56,7 +56,7 @@ def main():
         print("Unsupported distribution.")
         return
 
-    print("\n1. Install a new kernel")
+    print("1. Install a new kernel")
     print("2. Manage existing kernels")
     choice = input("Enter your choice: ")
 
