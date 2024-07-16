@@ -289,9 +289,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     version = choose_kernel_version(versions, debug)
-    install_packages(packages, debug)
     download_kernel(version, debug)
     extract_kernel(version, debug)
+    install_packages(packages, debug)
     apply_patch(version, debug)
     configure_kernel(version, debug)
     disable_secureboot_keyrings()
