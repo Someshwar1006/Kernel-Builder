@@ -3,7 +3,7 @@
 import sys
 import os
 
-#Took me an hour to figure this out
+#Took me an hour to figure this out.
 sys.path.append('/usr/lib/kernel-builder')
 
 import argparse
