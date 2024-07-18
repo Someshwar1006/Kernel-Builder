@@ -19,6 +19,29 @@ class colors:
 
 KERNEL_BASE_URL = "https://www.kernel.org"
 
+def install_prerequisites(debug=False):
+    packages = [
+        "build-essential",
+        "libncurses-dev",
+        "bison",
+        "flex",
+        "libssl-dev",
+        "libelf-dev",
+        "fakeroot",
+        "dwarves"
+    ]
+
+    if debug:
+        print(f"{colors.CYAN}Installing prerequisite packages: {', '.join(packages)}{colors.END}")
+
+    try:
+        subprocess.run(["sudo", "apt", "update"], check=True)
+        subprocess.run(["sudo", "apt", "install", "-y"] + packages, check=True)
+        print(f"{colors.GREEN}Prerequisite packages installed successfully.{colors.END}")
+    except subprocess.CalledProcessError as e:
+        print(f"{colors.RED}Failed to install prerequisite packages. Error: {e}{colors.END}")
+
+
 def get_available_versions(debug=False):
     url = f"{KERNEL_BASE_URL}/releases.json"
     if debug:
@@ -59,6 +82,11 @@ def choose_kernel_version(versions, debug=False):
             print(f"{colors.RED}Invalid input. Please enter a number.{colors.END}")
 
 def download_kernel(version, debug=False):
+    filename = f"linux-{version}.tar.xz"
+    if os.path.exists(filename):
+        print(f"{colors.GREEN}Kernel {filename} already exists. Skipping download.{colors.END}")
+        return
+
     url = f"{KERNEL_BASE_URL}/pub/linux/kernel/v{version.split('.')[0]}.x/linux-{version}.tar.xz"
     if debug:
         print(f"{colors.CYAN}Downloading kernel from {url}{colors.END}")
@@ -67,19 +95,24 @@ def download_kernel(version, debug=False):
     if response.status_code == 200:
         total_size = int(response.headers.get('content-length', 0))
         downloaded_size = 0
-        with open(f"linux-{version}.tar.xz", 'wb') as file:
+        with open(filename, 'wb') as file:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     file.write(chunk)
                     downloaded_size += len(chunk)
                     print_progress_bar(downloaded_size, total_size, prefix=f"{colors.BLUE}Downloading:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
-        print(f"\nDownloaded linux-{version}.tar.xz")
+        print(f"\nDownloaded {filename}")
         if debug:
-            print(f"{colors.GREEN}Kernel downloaded to linux-{version}.tar.xz{colors.END}")
+            print(f"{colors.GREEN}Kernel downloaded to {filename}{colors.END}")
     else:
         print(f"{colors.RED}Failed to download kernel. Check the version and try again.{colors.END}")
 
 def extract_kernel(version, debug=False):
+    dirname = f"linux-{version}"
+    if os.path.exists(dirname):
+        print(f"{colors.GREEN}Kernel already extracted to {dirname}. Skipping extraction.{colors.END}")
+        return
+
     if debug:
         print(f"{colors.CYAN}Extracting linux-{version}.tar.xz{colors.END}")
     with tarfile.open(f"linux-{version}.tar.xz", 'r:xz') as tar:
@@ -91,7 +124,8 @@ def extract_kernel(version, debug=False):
             print_progress_bar(extracted_files, total_files, prefix=f"{colors.BLUE}Extracting:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
     print(f"\nExtracted linux-{version}")
     if debug:
-        print(f"{colors.GREEN}Kernel extracted to linux-{version}{colors.END}")
+        print(f"{colors.GREEN}Kernel extracted to {dirname}{colors.END}")
+
 
 def apply_patch(version, debug=False):
     apply_patch = input(f"{colors.YELLOW}Do you have a patch file to apply? (yes/no): {colors.END}").strip().lower()
@@ -112,10 +146,22 @@ def apply_patch(version, debug=False):
             else:
                 print(f"{colors.RED}No .patch file found in the directory {patch_dir}.{colors.END}")
                 return
+
         if debug:
             print(f"{colors.CYAN}Applying patch {patch_file}{colors.END}")
-        os.system(f"patch -p1 < {patch_file}")
+
+        # Change into the extracted kernel directory
+        kernel_dir = f"linux-{version}"
+        if not os.path.isdir(kernel_dir):
+            print(f"{colors.RED}Kernel directory {kernel_dir} not found.{colors.END}")
+            return
+
+        os.chdir(kernel_dir)
+        os.system(f"patch -p1 < ../{patch_file}")
+        os.chdir("..")
+
         print(f"{colors.GREEN}Patch applied successfully.{colors.END}")
+
 
 def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
@@ -135,21 +181,21 @@ def configure_kernel(version, debug=False):
         config_option = input(f"{colors.YELLOW}Enter your choice (1/2/3): {colors.END}")
         if config_option == '1':
             if debug:
-                print(f"{colors.CYAN}Running 'zcat /proc/config.gz > .config'{colors.END}")
-            os.system("zcat /proc/config.gz > .config")
+                print(f"{colors.CYAN}Running 'make localmodconfig'{colors.END}")
+            os.system("sudo make localmodconfig")
             print(f"{colors.GREEN}Kernel configured with current running kernel's configuration{colors.END}")
             break
         elif config_option == '2':
             if debug:
-                print(f"{colors.CYAN}Running 'make localmodconfig'{colors.END}")
-            os.system("make localmodconfig")
+                print(f"{colors.CYAN}Running 'make menuconfig'{colors.END}")
+            os.system("sudo make menuconfig")
             print(f"{colors.GREEN}Kernel configuration initialized with local modules{colors.END}")
             break
         elif config_option == '3':
             if debug:
-                print(f"{colors.CYAN}Running 'zcat /proc/config.gz > .config' followed by 'make menuconfig'{colors.END}")
-            os.system("zcat /proc/config.gz > .config")
-            os.system("make menuconfig")
+                print(f"{colors.CYAN}Running 'make localmodconfig' followed by 'make menuconfig'{colors.END}")
+            os.system("sudo make localmodconfig")
+            os.system("sudo make menuconfig")
             print(f"{colors.GREEN}Kernel configuration customized from current running kernel's configuration{colors.END}")
             break
         else:
@@ -187,19 +233,19 @@ def update_bootloader(version, debug=False):
     os.system("sudo update-grub")
     print(f"{colors.GREEN}Bootloader updated{colors.END}")
 
-if __name__ == "__main__":
-    debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
+#if __name__ == "__main__":
+debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes' or 'y'
+install_prerequisites(debug)
+versions = get_available_versions(debug)
+if not versions:
+    print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
+    sys.exit(1)
 
-    versions = get_available_versions(debug)
-    if not versions:
-        print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
-        sys.exit(1)
-
-    version = choose_kernel_version(versions, debug)
-    download_kernel(version, debug)
-    extract_kernel(version, debug)
-    apply_patch(version, debug)
-    configure_kernel(version, debug)
-    compile_kernel(version, debug)
-    install_kernel(version, debug)
-    update_bootloader(version, debug)
+version = choose_kernel_version(versions, debug)
+download_kernel(version, debug)
+extract_kernel(version, debug)
+apply_patch(version, debug)
+configure_kernel(version, debug)
+compile_kernel(version, debug)
+install_kernel(version, debug)
+update_bootloader(version, debug)
