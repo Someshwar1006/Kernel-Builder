@@ -19,7 +19,7 @@ class colors:
 
 KERNEL_BASE_URL = "https://www.kernel.org"
 
-def install_prerequisites(debug=False):
+def install_packages(debug):
     packages = [
         "build-essential",
         "libncurses-dev",
@@ -43,6 +43,8 @@ def install_prerequisites(debug=False):
 
 
 def get_available_versions(debug=False):
+
+    print("UBUNTU")
     url = f"{KERNEL_BASE_URL}/releases.json"
     if debug:
         print(f"{colors.DARKCYAN}Fetching available versions from {url}{colors.END}")
@@ -216,7 +218,7 @@ def configure_kernel(version, debug=False):
 def compile_kernel(version, debug=False):
     os.chdir(f"linux-{version}")
     print(f"{colors.CYAN}Compiling kernel{colors.END}")
-    subprocess.run(["make", "-j20"])
+    subprocess.run(["sudo", "make", "-j20"])
     print(f"{colors.GREEN}Kernel compilation completed{colors.END}")
     os.chdir("..")
 
@@ -233,19 +235,23 @@ def update_bootloader(version, debug=False):
     os.system("sudo update-grub")
     print(f"{colors.GREEN}Bootloader updated{colors.END}")
 
-#if __name__ == "__main__":
-debug = input(f"{colors.YELLOW}Enable debug mode? (y/n): {colors.END}").strip().lower() == 'yes' or 'y'
-install_prerequisites(debug)
-versions = get_available_versions(debug)
-if not versions:
-    print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
-    sys.exit(1)
+def create_initramfs(version, debug=False):
+    print("")
 
-"""version = choose_kernel_version(versions, debug)
-download_kernel(version, debug)
-extract_kernel(version, debug)
-apply_patch(version, debug)
-configure_kernel(version, debug)
-compile_kernel(version, debug)
-install_kernel(version, debug)
-update_bootloader(version, debug)"""
+if __name__ == "__main__":
+
+    debug = input(f"{colors.YELLOW}Enable debug mode? (y/n): {colors.END}").strip().lower() == 'yes' or 'y'
+    install_packages(debug)
+    versions = get_available_versions(debug)
+    if not versions:
+        print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
+        sys.exit(1)
+
+    version = choose_kernel_version(versions, debug)
+    download_kernel(version, debug)
+    extract_kernel(version, debug)
+    apply_patch(version, debug)
+    configure_kernel(version, debug)
+    compile_kernel(version, debug)
+    install_kernel(version, debug)
+    update_bootloader(version, debug)
