@@ -2,6 +2,7 @@ import os
 import re
 
 GRUB_CFG = "/boot/grub/grub.cfg"
+PROTECTED_FILES = {"vmlinuz", "vmlinuz-linux", "initramfs-linux.img"}
 
 def list_installed_kernels():
     kernels = []
@@ -10,7 +11,9 @@ def list_installed_kernels():
             for line in grub_file:
                 match = re.search(r'vmlinuz-(\S+)', line)
                 if match:
-                    kernels.append(match.group(1))
+                    kernel_version = match.group(1)
+                    if kernel_version not in kernels:  # Prevent duplicate entries
+                        kernels.append(kernel_version)
     if not kernels:
         print("No kernels installed.")
     else:
@@ -20,7 +23,7 @@ def list_installed_kernels():
     return kernels
 
 def rename_kernel(kernels):
-    list_installed_kernels()
+    kernels = list_installed_kernels()
     try:
         idx = int(input("Enter the number of the kernel to rename: ")) - 1
         if idx < 0 or idx >= len(kernels):
@@ -28,8 +31,12 @@ def rename_kernel(kernels):
             return
 
         old_name = kernels[idx]
-        new_name = input(f"Enter the new name for {old_name}: ")
         old_vmlinuz = f"/boot/vmlinuz-{old_name}"
+        if old_name in PROTECTED_FILES or old_vmlinuz in PROTECTED_FILES:
+            print(f"{old_name} is a protected kernel and cannot be renamed.")
+            return
+
+        new_name = input(f"Enter the new name for {old_name}: ")
         new_vmlinuz = f"/boot/vmlinuz-{new_name}"
         if os.path.exists(old_vmlinuz):
             os.rename(old_vmlinuz, new_vmlinuz)
@@ -40,7 +47,7 @@ def rename_kernel(kernels):
         print("Invalid selection.")
 
 def delete_kernel(kernels):
-    list_installed_kernels()
+    kernels = list_installed_kernels()
     try:
         idx = int(input("Enter the number of the kernel to delete: ")) - 1
         if idx < 0 or idx >= len(kernels):
@@ -48,18 +55,32 @@ def delete_kernel(kernels):
             return
 
         kernel_name = kernels[idx]
+        vmlinuz = f"/boot/vmlinuz-{kernel_name}"
+        if kernel_name in PROTECTED_FILES or vmlinuz in PROTECTED_FILES:
+            print(f"{kernel_name} is a protected kernel and cannot be deleted.")
+            return
+
         confirm = input(f"Are you sure you want to delete {kernel_name}? (y/N): ")
         if confirm.lower() == 'y':
-            vmlinuz = f"/boot/vmlinuz-{kernel_name}"
             initrd = f"/boot/initrd.img-{kernel_name}"
-            os.remove(vmlinuz)
-            os.remove(initrd)
-            print(f"Deleted {kernel_name}.")
+            initramfs = f"/boot/initramfs-{kernel_name}.img"
+            files_to_delete = [vmlinuz]
+            if os.path.exists(initrd):
+                files_to_delete.append(initrd)
+            if os.path.exists(initramfs):
+                files_to_delete.append(initramfs)
+
+            for file in files_to_delete:
+                try:
+                    os.remove(file)
+                    print(f"Deleted {file}.")
+                except FileNotFoundError:
+                    print(f"File not found: {file}")
         else:
             print("Deletion cancelled.")
     except (ValueError, IndexError):
         print("Invalid selection.")
-    except FileNotFoundError as e:
+    except Exception as e:
         print(f"Error deleting file: {e}")
 
 def manage_kernels():
@@ -78,3 +99,6 @@ def manage_kernels():
         delete_kernel(kernels)
     else:
         print("Invalid choice.")
+
+# Run the kernel management function
+manage_kernels()
