@@ -205,7 +205,7 @@ def configure_kernel(version, debug=False):
 
     # Optionally disable secure boot keyrings
     disable_secureboot = input(f"{colors.YELLOW}Do you want to disable secure boot keyrings? (y/n): {colors.END}").strip().lower()
-    if disable_secureboot == 'y':
+    if disable_secureboot != 'n':
         print(f"{colors.CYAN}Disabling secure boot keyrings{colors.END}")
         subprocess.run(["sudo", "scripts/config", "--disable", "SYSTEM_TRUSTED_KEYS"])
         subprocess.run(["sudo", "scripts/config", "--disable", "SYSTEM_REVOCATION_KEYS"])
