@@ -128,10 +128,10 @@ def extract_kernel(version, debug=False):
 
 
 def apply_patch(version, debug=False):
-    apply_patch = input(f"{colors.YELLOW}Do you have a patch file to apply? (yes/no): {colors.END}").strip().lower()
-    if apply_patch == 'yes':
-        patch_in_current_dir = input(f"{colors.YELLOW}Is the patch file in the current directory? (yes/no): {colors.END}").strip().lower()
-        if patch_in_current_dir == 'yes':
+    apply_patch = input(f"{colors.YELLOW}Do you have a patch file to apply? (y/n): {colors.END}").strip().lower()
+    if apply_patch == 'y':
+        patch_in_current_dir = input(f"{colors.YELLOW}Is the patch file in the current directory? (y/n): {colors.END}").strip().lower()
+        if patch_in_current_dir == 'y':
             patch_files = [f for f in os.listdir('.') if f.endswith('.patch')]
             if patch_files:
                 patch_file = patch_files[0]
@@ -202,8 +202,8 @@ def configure_kernel(version, debug=False):
             print(f"{colors.RED}Invalid selection. Please enter 1, 2, or 3.{colors.END}")
 
     # Optionally disable secure boot keyrings
-    disable_secureboot = input(f"{colors.YELLOW}Do you want to disable secure boot keyrings? (yes/no): {colors.END}").strip().lower()
-    if disable_secureboot == 'yes':
+    disable_secureboot = input(f"{colors.YELLOW}Do you want to disable secure boot keyrings? (y/n): {colors.END}").strip().lower()
+    if disable_secureboot == 'y':
         print(f"{colors.CYAN}Disabling secure boot keyrings{colors.END}")
         subprocess.run(["sudo", "scripts/config", "--disable", "SYSTEM_TRUSTED_KEYS"])
         subprocess.run(["sudo", "scripts/config", "--disable", "SYSTEM_REVOCATION_KEYS"])
@@ -234,7 +234,7 @@ def update_bootloader(version, debug=False):
     print(f"{colors.GREEN}Bootloader updated{colors.END}")
 
 #if __name__ == "__main__":
-debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes' or 'y'
+debug = input(f"{colors.YELLOW}Enable debug mode? (y/n): {colors.END}").strip().lower() == 'yes' or 'y'
 install_prerequisites(debug)
 versions = get_available_versions(debug)
 if not versions:
