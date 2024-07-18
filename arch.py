@@ -5,6 +5,8 @@ import subprocess
 import sys
 import tarfile
 
+
+
 # ANSI color escape sequences
 class colors:
     PURPLE = '\033[95m'
@@ -21,6 +23,7 @@ class colors:
 KERNEL_BASE_URL = "https://www.kernel.org"
 
 def get_available_versions(debug=False):
+    print("ARCH")
     url = f"{KERNEL_BASE_URL}/releases.json"
     if debug:
         print(f"{colors.DARKCYAN}Fetching available versions from {url}{colors.END}")
@@ -60,6 +63,11 @@ def choose_kernel_version(versions, debug=False):
             print(f"{colors.RED}Invalid input. Please enter a number.{colors.END}")
 
 def download_kernel(version, debug=False):
+    filename = f"linux-{version}.tar.xz"
+    if os.path.exists(filename):
+        print(f"{colors.GREEN}Kernel {filename} already exists. Skipping download.{colors.END}")
+        return
+
     url = f"{KERNEL_BASE_URL}/pub/linux/kernel/v{version.split('.')[0]}.x/linux-{version}.tar.xz"
     if debug:
         print(f"{colors.CYAN}Downloading kernel from {url}{colors.END}")
@@ -68,19 +76,25 @@ def download_kernel(version, debug=False):
     if response.status_code == 200:
         total_size = int(response.headers.get('content-length', 0))
         downloaded_size = 0
-        with open(f"linux-{version}.tar.xz", 'wb') as file:
+        with open(filename, 'wb') as file:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     file.write(chunk)
                     downloaded_size += len(chunk)
                     print_progress_bar(downloaded_size, total_size, prefix=f"{colors.BLUE}Downloading:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
-        print(f"\nDownloaded linux-{version}.tar.xz")
+        print(f"\nDownloaded {filename}")
         if debug:
-            print(f"{colors.GREEN}Kernel downloaded to linux-{version}.tar.xz{colors.END}")
+            print(f"{colors.GREEN}Kernel downloaded to {filename}{colors.END}")
     else:
         print(f"{colors.RED}Failed to download kernel. Check the version and try again.{colors.END}")
 
+
 def extract_kernel(version, debug=False):
+    dirname = f"linux-{version}"
+    if os.path.exists(dirname):
+        print(f"{colors.GREEN}Kernel already extracted to {dirname}. Skipping extraction.{colors.END}")
+        return
+
     if debug:
         print(f"{colors.CYAN}Extracting linux-{version}.tar.xz{colors.END}")
     with tarfile.open(f"linux-{version}.tar.xz", 'r:xz') as tar:
@@ -92,7 +106,8 @@ def extract_kernel(version, debug=False):
             print_progress_bar(extracted_files, total_files, prefix=f"{colors.BLUE}Extracting:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
     print(f"\nExtracted linux-{version}")
     if debug:
-        print(f"{colors.GREEN}Kernel extracted to linux-{version}{colors.END}")
+        print(f"{colors.GREEN}Kernel extracted to {dirname}{colors.END}")
+
 
 def apply_patch(version, debug=False):
     apply_patch = input(f"{colors.YELLOW}Do you have a patch file to apply? (yes/no): {colors.END}").strip().lower()
@@ -126,7 +141,20 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
     if iteration == total:
         print()
 
-def install_packages(packages, debug=False):
+def install_packages(debug):
+    packages = [
+    "base-devel",
+    "xmlto",
+    "kmod",
+    "inetutils",
+    "bc",
+    "libelf",
+    "git",
+    "cpio",
+    "perl",
+    "tar",
+    "xz"
+    ]
     package_list = ' '.join(packages)
     print(f"{colors.CYAN}Installing necessary packages: {package_list}{colors.END}")
     if debug:

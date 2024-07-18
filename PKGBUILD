@@ -6,9 +6,9 @@ pkgdesc="Simplifies Linux kernel compilation with version selection, patching, a
 arch=('any')
 url="https://github.com/Someshwar1006/Kernel-Builder"
 license=('MIT')
-depends=('python' 'python-requests' 'python-pip')  # Added python-pip as a dependency
+depends=('python' 'python-requests' 'python-pip' 'base-devel' 'xmlto' 'kmod' 'inetutils' 'bc' 'libelf' 'git' 'cpio' 'perl' 'tar' 'xz')  # Added python-pip as a dependency
 source=("https://github.com/Someshwar1006/Kernel-Builder/raw/main/kernel-builder-2.0.tar.gz")
-sha256sums=('skip')
+sha256sums=('skip 'base-devel' 'xmlto' 'kmod' 'inetutils' 'bc' 'libelf' 'git' 'cpio' 'perl' 'tar' 'xz'')
 
 package() {
   cd "$srcdir/"
