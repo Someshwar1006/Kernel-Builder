@@ -241,11 +241,11 @@ if not versions:
     print(f"{colors.RED}No available versions fetched. Exiting.{colors.END}")
     sys.exit(1)
 
-version = choose_kernel_version(versions, debug)
+"""version = choose_kernel_version(versions, debug)
 download_kernel(version, debug)
 extract_kernel(version, debug)
 apply_patch(version, debug)
 configure_kernel(version, debug)
 compile_kernel(version, debug)
 install_kernel(version, debug)
-update_bootloader(version, debug)
+update_bootloader(version, debug)"""
