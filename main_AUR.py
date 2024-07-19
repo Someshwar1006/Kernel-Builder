@@ -3,7 +3,7 @@
 import sys
 import os
 
-#Took me an hour to figure this out
+#Took me an hour to figure this out.
 sys.path.append('/usr/lib/kernel-builder')
 
 import argparse
@@ -56,7 +56,7 @@ def main():
         print("Unsupported distribution.")
         return
 
-    print("\n1. Install a new kernel")
+    print("1. Install a new kernel")
     print("2. Manage existing kernels")
     choice = input("Enter your choice: ")
 

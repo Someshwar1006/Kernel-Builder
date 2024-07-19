@@ -5,7 +5,9 @@ import subprocess
 import sys
 import tarfile
 
-# ANSI color escape sequences.
+
+
+# ANSI color escape sequences
 class colors:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
@@ -21,6 +23,7 @@ class colors:
 KERNEL_BASE_URL = "https://www.kernel.org"
 
 def get_available_versions(debug=False):
+    print("ARCH")
     url = f"{KERNEL_BASE_URL}/releases.json"
     if debug:
         print(f"{colors.DARKCYAN}Fetching available versions from {url}{colors.END}")
@@ -60,6 +63,11 @@ def choose_kernel_version(versions, debug=False):
             print(f"{colors.RED}Invalid input. Please enter a number.{colors.END}")
 
 def download_kernel(version, debug=False):
+    filename = f"linux-{version}.tar.xz"
+    if os.path.exists(filename):
+        print(f"{colors.GREEN}Kernel {filename} already exists. Skipping download.{colors.END}")
+        return
+
     url = f"{KERNEL_BASE_URL}/pub/linux/kernel/v{version.split('.')[0]}.x/linux-{version}.tar.xz"
     if debug:
         print(f"{colors.CYAN}Downloading kernel from {url}{colors.END}")
@@ -68,19 +76,25 @@ def download_kernel(version, debug=False):
     if response.status_code == 200:
         total_size = int(response.headers.get('content-length', 0))
         downloaded_size = 0
-        with open(f"linux-{version}.tar.xz", 'wb') as file:
+        with open(filename, 'wb') as file:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     file.write(chunk)
                     downloaded_size += len(chunk)
                     print_progress_bar(downloaded_size, total_size, prefix=f"{colors.BLUE}Downloading:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
-        print(f"\nDownloaded linux-{version}.tar.xz")
+        print(f"\nDownloaded {filename}")
         if debug:
-            print(f"{colors.GREEN}Kernel downloaded to linux-{version}.tar.xz{colors.END}")
+            print(f"{colors.GREEN}Kernel downloaded to {filename}{colors.END}")
     else:
         print(f"{colors.RED}Failed to download kernel. Check the version and try again.{colors.END}")
 
+
 def extract_kernel(version, debug=False):
+    dirname = f"linux-{version}"
+    if os.path.exists(dirname):
+        print(f"{colors.GREEN}Kernel already extracted to {dirname}. Skipping extraction.{colors.END}")
+        return
+
     if debug:
         print(f"{colors.CYAN}Extracting linux-{version}.tar.xz{colors.END}")
     with tarfile.open(f"linux-{version}.tar.xz", 'r:xz') as tar:
@@ -92,7 +106,8 @@ def extract_kernel(version, debug=False):
             print_progress_bar(extracted_files, total_files, prefix=f"{colors.BLUE}Extracting:{colors.END}", suffix=f"{colors.GREEN}Complete{colors.END}", length=50)
     print(f"\nExtracted linux-{version}")
     if debug:
-        print(f"{colors.GREEN}Kernel extracted to linux-{version}{colors.END}")
+        print(f"{colors.GREEN}Kernel extracted to {dirname}{colors.END}")
+
 
 def apply_patch(version, debug=False):
     apply_patch = input(f"{colors.YELLOW}Do you have a patch file to apply? (yes/no): {colors.END}").strip().lower()
@@ -125,6 +140,27 @@ def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, lengt
     print(f'\r{prefix} |{bar}| {percent}% {suffix}', end='\r')
     if iteration == total:
         print()
+
+def install_packages(debug):
+    packages = [
+    "base-devel",
+    "xmlto",
+    "kmod",
+    "inetutils",
+    "bc",
+    "libelf",
+    "git",
+    "cpio",
+    "perl",
+    "tar",
+    "xz"
+    ]
+    package_list = ' '.join(packages)
+    print(f"{colors.CYAN}Installing necessary packages: {package_list}{colors.END}")
+    if debug:
+        print(f"{colors.CYAN}Running 'sudo pacman -Syu --needed {package_list}'{colors.END}")
+    subprocess.run(["sudo", "pacman", "-Syu", "--needed", *packages])
+    print(f"{colors.GREEN}Package installation completed{colors.END}")
 
 def configure_kernel(version, debug=False):
     os.chdir(f"linux-{version}")
@@ -182,13 +218,6 @@ def install_kernel(version, debug=False):
     subprocess.run(["sudo", "make", "install"])
     print(f"{colors.GREEN}Kernel installation completed{colors.END}")
     os.chdir("..")
-
-def create_initramfs(version, debug=False):
-    # Ensure version is formatted as x.y.z (e.g., 6.10.0)
-    version_parts = version.split('.')
-    if len(version_parts) == 2:
-        version = f"{version}.0"
-
     bzImage_path = f"linux-{version}/arch/x86/boot/bzImage"
     target_path = f"/boot/vmlinuz-linux-{version}"
 
@@ -202,6 +231,12 @@ def create_initramfs(version, debug=False):
     else:
         print(f"{colors.RED}Error: bzImage not found at {bzImage_path}{colors.END}")
         return
+
+def create_initramfs(version, debug=False):
+    # Ensure version is formatted as x.y.z (e.g., 6.10.0)
+    version_parts = version.split('.')
+    if len(version_parts) == 2:
+        version = f"{version}.0"
 
     # Create initramfs
     print(f"{colors.CYAN}Creating initramfs{colors.END}")
@@ -259,6 +294,19 @@ def disable_secureboot_keyrings():
         print(f"{colors.GREEN}Secure Boot keyrings disabled successfully.{colors.END}")
     else:
         print(f"{colors.YELLOW}Secure Boot keyrings will not be modified.{colors.END}")
+packages = [
+    "base-devel",
+    "xmlto",
+    "kmod",
+    "inetutils",
+    "bc",
+    "libelf",
+    "git",
+    "cpio",
+    "perl",
+    "tar",
+    "xz"
+]
 
 if __name__ == "__main__":
     debug = input(f"{colors.YELLOW}Enable debug mode? (yes/no): {colors.END}").strip().lower() == 'yes'
@@ -271,6 +319,7 @@ if __name__ == "__main__":
     version = choose_kernel_version(versions, debug)
     download_kernel(version, debug)
     extract_kernel(version, debug)
+    install_packages(packages, debug)
     apply_patch(version, debug)
     configure_kernel(version, debug)
     disable_secureboot_keyrings()

@@ -7,8 +7,8 @@ arch=('any')
 url="https://github.com/Someshwar1006/Kernel-Builder"
 license=('MIT')
 depends=('python' 'python-requests' 'python-pip')  # Added python-pip as a dependency
-source=("https://github.com/Someshwar1006/Kernel-Builder/raw/Test-branch/kernel-builder-1.0.tar.gz")
-sha256sums=('SKIP')
+source=("https://github.com/Someshwar1006/Kernel-Builder/raw/main/kernel-builder-2.0.tar.gz")
+sha256sums=('skip')
 
 package() {
   cd "$srcdir/"

@@ -10,7 +10,9 @@ def list_installed_kernels():
             for line in grub_file:
                 match = re.search(r'vmlinuz-(\S+)', line)
                 if match:
-                    kernels.append(match.group(1))
+                    kernel_version = match.group(1)
+                    if kernel_version not in kernels:  # Prevent duplicate entries
+                        kernels.append(kernel_version)
     if not kernels:
         print("No kernels installed.")
     else:
@@ -20,7 +22,7 @@ def list_installed_kernels():
     return kernels
 
 def rename_kernel(kernels):
-    list_installed_kernels()
+    kernels = list_installed_kernels()
     try:
         idx = int(input("Enter the number of the kernel to rename: ")) - 1
         if idx < 0 or idx >= len(kernels):
@@ -40,7 +42,7 @@ def rename_kernel(kernels):
         print("Invalid selection.")
 
 def delete_kernel(kernels):
-    list_installed_kernels()
+    kernels = list_installed_kernels()
     try:
         idx = int(input("Enter the number of the kernel to delete: ")) - 1
         if idx < 0 or idx >= len(kernels):
@@ -52,14 +54,24 @@ def delete_kernel(kernels):
         if confirm.lower() == 'y':
             vmlinuz = f"/boot/vmlinuz-{kernel_name}"
             initrd = f"/boot/initrd.img-{kernel_name}"
-            os.remove(vmlinuz)
-            os.remove(initrd)
-            print(f"Deleted {kernel_name}.")
+            initramfs = f"/boot/initramfs-{kernel_name}.img"
+            files_to_delete = [vmlinuz]
+            if os.path.exists(initrd):
+                files_to_delete.append(initrd)
+            if os.path.exists(initramfs):
+                files_to_delete.append(initramfs)
+
+            for file in files_to_delete:
+                try:
+                    os.remove(file)
+                    print(f"Deleted {file}.")
+                except FileNotFoundError:
+                    print(f"File not found: {file}")
         else:
             print("Deletion cancelled.")
     except (ValueError, IndexError):
         print("Invalid selection.")
-    except FileNotFoundError as e:
+    except Exception as e:
         print(f"Error deleting file: {e}")
 
 def manage_kernels():
@@ -78,3 +90,6 @@ def manage_kernels():
         delete_kernel(kernels)
     else:
         print("Invalid choice.")
+
+if __name__ == "__main__":
+    manage_kernels()
