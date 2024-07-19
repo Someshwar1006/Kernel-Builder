@@ -59,6 +59,7 @@ def main():
     if choice == '1':
         install_kernel(distro_module, debug)
     elif choice == '2':
+        print()
         manage_module.manage_kernels()
     else:
         print("Invalid choice.")
