@@ -86,17 +86,8 @@ To use `kernel-builder` on Ubuntu, follow these steps:
 
     ```bash
     cd path/to/kernel-builder
-    ```
 
-4. **Install Python dependencies:**
-
-    If you have a `requirements.txt` file:
-
-    ```bash
-    pip3 install -r requirements.txt
-    ```
-
-5. **Run the main script:**
+4. **Run the main script:**
 
     ```bash
     python3 main.py
